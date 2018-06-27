@@ -131,15 +131,9 @@ class Conf_downloader():
             for file_saved in saved:
                 print ("Map related file successfully saved under " + file_saved)
 
-
     def process(self):
         self.get_worker_data()
         self.load_n_check_configs()
         self.download_semantics()
         self.download_task_definition()
         self.download_maps()
-
-
-
-dwl = Conf_downloader(get_robot_uuid())
-dwl.process()
