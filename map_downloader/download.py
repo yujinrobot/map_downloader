@@ -196,7 +196,7 @@ class Conf_downloader():
                     write_to_file(dest_file_path, armarker_data.text)
                     print("Successfully saved hps file under " + dest_file_path)
                 else:
-                    print armarker_data.text
+                    print armarker_data.text # display occured error message
             else:
                 print('AR Marker belongs to Map with uuid: ' + map.get('uuid') + ' won\'t be downloaded as it does not'
                                                                 ' define a site_id')
