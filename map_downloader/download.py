@@ -175,7 +175,31 @@ class Conf_downloader():
                     print ("Map related file successfully saved under " + file_saved)
             else:
                 print('Map with uuid: ' + map.get('uuid') + ' won\'t be downloaded as it does not define'
-                                                            'a site_id')
+                                                            ' a site_id')
+
+    def download_armarker(self):
+        map_list_url = self.base_url + ':10605/configuration/maps'
+        map_list = requests.get(map_list_url).json()
+
+        home = os.path.expanduser("~")
+        dest_folder = home + '/' + '.ros/' + 'gopher/' + 'hps/'
+        if os.path.isdir(dest_folder) is False:
+            print "Creating hps folder under " + dest_folder
+            os.makedirs(dest_folder)
+
+        for map in map_list:
+            if self.verify_map(map):
+                url = self.base_url + ':10605/armarker/' + str(map.get('id'))
+                armarker_data = requests.post(url)
+                if armarker_data.status_code is 200:
+                    dest_file_path = dest_folder + map.get('uuid') + '.ar_marker.hp'
+                    write_to_file(dest_file_path, armarker_data.text)
+                    print("Successfully saved hps file under " + dest_file_path)
+                else:
+                    print armarker_data.text # display occured error message
+            else:
+                print('AR Marker belongs to Map with uuid: ' + map.get('uuid') + ' won\'t be downloaded as it does not'
+                                                                ' define a site_id')
 
     def process(self):
         print self.get_worker_data()
@@ -183,3 +207,4 @@ class Conf_downloader():
         self.download_semantics()
         self.download_task_definition()
         self.download_maps()
+        self.download_armarker()
