@@ -6,3 +6,13 @@ dependending on the robot uname & hostname.
 ~~~~
 (sudo) pip install map_downloader
 ~~~~
+### Usage ###
+Download maps semantincs, task definitions and AR markers data.
+~~~~
+$> map_downloader
+~~~~
+
+Download semantincs, task definitions and AR markers data.
+~~~~
+$> map_downloader --skip_map
+~~~~
