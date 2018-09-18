@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='map_downloader',
-      version='0.03',
+      version='0.10',
       description='Download map files required by gopher_series robot.',
       author='Thomas Kostas',
       url='https://github.com/yotabits/map_downloader',

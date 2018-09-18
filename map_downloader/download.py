@@ -16,7 +16,7 @@ def get_robot_uuid():
 
 
 class Conf_downloader():
-    def __init__(self, worker_uuid):
+    def __init__(self, worker_uuid, skip_map=False):
         print ("Attempting to download data for " + worker_uuid)
         self.hostname = 'concert'
         self.base_url = 'http://' + self.hostname
@@ -25,6 +25,7 @@ class Conf_downloader():
         self.worker_data = None
         self.configs = None
         self.default_map = None
+        self.skip_map = skip_map
 
     def show_target(self):
         try:
@@ -206,5 +207,8 @@ class Conf_downloader():
         self.load_n_check_configs()
         self.download_semantics()
         self.download_task_definition()
-        self.download_maps()
+        if self.skip_map is False:
+            self.download_maps()
+        else:
+            print("SKIPPING MAP DOWNLOAD !")
         self.download_armarker()

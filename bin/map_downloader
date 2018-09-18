@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from map_downloader import download
+from map_downloader import opt_parser
 
-dwl = download.Conf_downloader(download.get_robot_uuid())
-dwl.process()
+opt_parser.main()
