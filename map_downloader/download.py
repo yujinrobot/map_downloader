@@ -4,8 +4,11 @@ import socket
 import shutil
 
 
-def write_to_file(path, data):
-    f = open(path, 'wb')
+def write_to_file(path, data, binary=True):
+    if binary is True:
+        f = open(path, 'wb')
+    else:
+        f = open(path, "w")
     f.write(data)
     f.close()
 
@@ -64,7 +67,7 @@ class Conf_downloader():
             print "Creating semantic folder under " + dest_folder
             os.makedirs(dest_folder)
         dest_file_path = dest_folder + '/' + filename
-        write_to_file(dest_file_path, semantic_data)
+        write_to_file(dest_file_path, semantic_data.encode('utf-8'))
         print("Successfully saved semantics under " + dest_file_path)
 
 
@@ -85,7 +88,7 @@ class Conf_downloader():
             print "Creating tasks_definition folder under " + dest_folder
             os.makedirs(dest_folder)
         dest_file_path = dest_folder + '/' + filename
-        write_to_file(dest_file_path, tasks_definition_data)
+        write_to_file(dest_file_path, tasks_definition_data.encode('utf-8'))
         print("Successfully saved tasks definition under " + dest_file_path)
 
     def apply_locked_maps(self, map_list):
