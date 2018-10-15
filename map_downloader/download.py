@@ -58,18 +58,24 @@ class Conf_downloader():
               "(fleet management UI > worker configuration)")
 
     def download_semantics(self, path=None, filename='semantics.yaml'):
-        default_map = self.configs.get('default_map')
-        semantic_url = self.base_url + ':10605/management/export?ext=yaml&download=true&defaultmap=' + default_map
-        semantic_data = requests.get(semantic_url).text
+        try:
+            default_map = self.configs.get('default_map')
+            semantic_url = self.base_url + ':10605/management/export?ext=yaml&download=true&defaultmap=' + default_map
+            semantic_data = requests.get(semantic_url)
+            semantic_data.raise_for_status()
+        except requests.HTTPError as err:
+            print ("Failed to download semantic file :" + semantic_data.text.encode('utf-8')
+                   + " HTTP error: " + str(err))
+            return
+
         home = os.path.expanduser("~")
         dest_folder = home + '/' + 'semantics'
         if os.path.isdir(dest_folder) is False:
             print "Creating semantic folder under " + dest_folder
             os.makedirs(dest_folder)
         dest_file_path = dest_folder + '/' + filename
-        write_to_file(dest_file_path, semantic_data.encode('utf-8'))
+        write_to_file(dest_file_path, semantic_data.text.encode('utf-8'))
         print("Successfully saved semantics under " + dest_file_path)
-
 
     def load_n_check_configs(self):
         if 'configs' in self.worker_data:
@@ -80,15 +86,22 @@ class Conf_downloader():
             exit(2)
 
     def download_task_definition(self, filename='task_definition.yaml'):
-        url = self.base_url + ':10605/taskdefinition'
-        tasks_definition_data = requests.post(url, json=self.configs.get('args_task_definition')).text
+        try:
+            url = self.base_url + ':10605/taskdefinition'
+            tasks_definition_data = requests.post(url, json=self.configs.get('args_task_definition'))
+            tasks_definition_data.raise_for_status()
+        except requests.HTTPError as err:
+            print ("Failed to download task definition file : " + tasks_definition_data.text.encode('utf-8')
+                   + " HTTP error: " + str(err))
+            return
+
         home = os.path.expanduser("~")
         dest_folder = home + '/' + '.ros/' + 'gopher/' + 'rocon'
         if os.path.isdir(dest_folder) is False:
             print "Creating tasks_definition folder under " + dest_folder
             os.makedirs(dest_folder)
         dest_file_path = dest_folder + '/' + filename
-        write_to_file(dest_file_path, tasks_definition_data.encode('utf-8'))
+        write_to_file(dest_file_path, tasks_definition_data.text.encode('utf-8'))
         print("Successfully saved tasks definition under " + dest_file_path)
 
     def apply_locked_maps(self, map_list):
@@ -193,14 +206,16 @@ class Conf_downloader():
 
         for map in map_list:
             if self.verify_map(map):
-                url = self.base_url + ':10605/armarker/' + str(map.get('id'))
-                armarker_data = requests.post(url)
-                if armarker_data.status_code is 200:
-                    dest_file_path = dest_folder + map.get('uuid') + '.ar_marker.hp'
-                    write_to_file(dest_file_path, armarker_data.text)
-                    print("Successfully saved hps file under " + dest_file_path)
-                else:
-                    print armarker_data.text # display occured error message
+                try:
+                    url = self.base_url + ':10605/armarker/' + str(map.get('id'))
+                    armarker_data = requests.post(url)
+                    armarker_data.raise_for_status()
+                except requests.HTTPError as err:
+                    print ("Failed to download AR Marker file : " + armarker_data.text + " HTTP error: " + str(err))
+                    continue
+                dest_file_path = dest_folder + map.get('uuid') + '.ar_marker.hp'
+                write_to_file(dest_file_path, armarker_data.text)
+                print("Successfully saved hps file under " + dest_file_path)
             else:
                 print('AR Marker belongs to Map with uuid: ' + map.get('uuid') + ' won\'t be downloaded as it does not'
                                                                 ' define a site_id')
