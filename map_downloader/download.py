@@ -30,20 +30,30 @@ class Conf_downloader():
         self.default_map = None
         self.skip_map = skip_map
 
+    @staticmethod
+    def raise_response_error(response, action_str):
+        try:
+            response.raise_for_status()
+        except requests.HTTPError as err:
+            print("Error while " + action_str + " HTTP error: " + str(err) + " ...Exiting")
+            exit(1)
+
     def show_target(self):
         try:
             ip = socket.gethostbyname(self.hostname)
         except socket.gaierror:
-            print("hostname : " + self.hostname +" cannot be resolved. Please ensure that the hostname and IP are"
-                                                 "correctly set in /etc/host file.")
+            print("hostname : " + self.hostname + " cannot be resolved. Please ensure that the hostname and IP are"
+                                                  " correctly set in /etc/host file.")
+            exit(0)
         print("Attempting to connect to " + self.base_url + " with ip: " + ip)
 
     def get_worker_data(self):
         url = self.base_url + ':10602/scheduler/v0/workers?uuid=' + self.uuid
         response = requests.get(url)
+        self.raise_response_error(response, " downloading worker data.")
         self.worker_data = response.json()
         if len(self.worker_data) < 1:
-            print ("Worker with " + str(self.uuid) + " uuid not found on Server!")
+            print("Worker with " + str(self.uuid) + " uuid not found on Server!")
             self.generate_worker_on_concert()
             exit(1)
         else:
@@ -52,26 +62,27 @@ class Conf_downloader():
     def generate_worker_on_concert(self):
         print("Generating worker on concert server...")
         username = self.uuid.split('@')[0]
-        requests.put('http://concert:10602/scheduler/v0/workers/',
+        response = requests.put('http://concert:10602/scheduler/v0/workers/',
                      json={'uuid': self.uuid, 'name': username})
+        self.raise_response_error(response, "generating worker on concert")
         print("Worker successfully generated... Please configure your new robot on concert server"
               "(fleet management UI > worker configuration)")
 
-    def download_semantics(self, path=None, filename='semantics.yaml'):
+    def download_semantics(self, filename='semantics.yaml'):
         try:
             default_map = self.configs.get('default_map')
             semantic_url = self.base_url + ':10605/management/export?ext=yaml&download=true&defaultmap=' + default_map
             semantic_data = requests.get(semantic_url)
             semantic_data.raise_for_status()
         except requests.HTTPError as err:
-            print ("Failed to download semantic file :" + semantic_data.text.encode('utf-8')
+            print("Failed to download semantic file :" + semantic_data.text.encode('utf-8')
                    + " HTTP error: " + str(err))
             return
 
         home = os.path.expanduser("~")
         dest_folder = home + '/' + 'semantics'
         if os.path.isdir(dest_folder) is False:
-            print "Creating semantic folder under " + dest_folder
+            print("Creating semantic folder under " + dest_folder)
             os.makedirs(dest_folder)
         dest_file_path = dest_folder + '/' + filename
         write_to_file(dest_file_path, semantic_data.text.encode('utf-8'))
@@ -98,7 +109,7 @@ class Conf_downloader():
         home = os.path.expanduser("~")
         dest_folder = home + '/' + '.ros/' + 'gopher/' + 'rocon'
         if os.path.isdir(dest_folder) is False:
-            print "Creating tasks_definition folder under " + dest_folder
+            print("Creating tasks_definition folder under " + dest_folder)
             os.makedirs(dest_folder)
         dest_file_path = dest_folder + '/' + filename
         write_to_file(dest_file_path, tasks_definition_data.text.encode('utf-8'))
@@ -122,21 +133,24 @@ class Conf_downloader():
                         map['map_data']['metadata_path'] = metadata_path
         return map_list
 
-    def debug_map_list(self, map_list):
+    @staticmethod
+    def debug_map_list(map_list):
         for map in map_list:
             print('--------------------------------')
-            print map.get('uuid')
-            print map.get('img_path')
-            print map.get('map_data').get('nvmap_path')
-            print map.get('map_data').get('metadata_path')
+            print(map.get('uuid'))
+            print(map.get('img_path'))
+            print(map.get('map_data').get('nvmap_path'))
+            print(map.get('map_data').get('metadata_path'))
 
-    def verify_map(self, map):
+    @staticmethod
+    def verify_map(map):
         if map.get("site_id") is None:
             return False
         else:
             return True
 
-    def copy_dslam_file_to_map_name(self, map_name):
+    @staticmethod
+    def copy_dslam_file_to_map_name(map_name):
         home = os.path.expanduser("~")
         map_folder_path = home + '/' + '.ros/' + 'gopher/' + 'maps/'
         file_list = os.listdir(map_folder_path)
@@ -154,6 +168,7 @@ class Conf_downloader():
     def download_maps(self):
         map_list_url = self.base_url + ':10605/configuration/maps' #':10605/public/' #
         map_list = requests.get(map_list_url).json()
+        self.raise_response_error(map_list, "downloading maps")
         map_list = self.apply_locked_maps(map_list)
 
         base_dl_url = self.base_url + ':10605/public/'
@@ -165,7 +180,7 @@ class Conf_downloader():
             home = os.path.expanduser("~")
             dest_folder = home + '/' + '.ros/' + 'gopher/' + 'maps/'
             if os.path.isdir(dest_folder) is False:
-                print "Creating map folder under " + dest_folder
+                print("Creating map folder under " + dest_folder)
                 os.makedirs(dest_folder)
 
             file_path = dest_folder + map.get('uuid')
@@ -197,11 +212,11 @@ class Conf_downloader():
     def download_armarker(self):
         map_list_url = self.base_url + ':10605/configuration/maps'
         map_list = requests.get(map_list_url).json()
-
+        self.raise_response_error(map_list, " downloading AR marker")
         home = os.path.expanduser("~")
         dest_folder = home + '/' + '.ros/' + 'gopher/' + 'hps/'
         if os.path.isdir(dest_folder) is False:
-            print "Creating hps folder under " + dest_folder
+            print("Creating hps folder under " + dest_folder)
             os.makedirs(dest_folder)
 
         for map in map_list:
@@ -211,7 +226,7 @@ class Conf_downloader():
                     armarker_data = requests.post(url)
                     armarker_data.raise_for_status()
                 except requests.HTTPError as err:
-                    print ("Failed to download AR Marker file : " + armarker_data.text + " HTTP error: " + str(err))
+                    print("Failed to download AR Marker file : " + armarker_data.text + " HTTP error: " + str(err))
                     continue
                 dest_file_path = dest_folder + map.get('uuid') + '.ar_marker.hp'
                 write_to_file(dest_file_path, armarker_data.text)
@@ -221,7 +236,7 @@ class Conf_downloader():
                                                                 ' define a site_id')
 
     def process(self):
-        print self.get_worker_data()
+        self.get_worker_data()
         self.load_n_check_configs()
         self.download_semantics()
         self.download_task_definition()
