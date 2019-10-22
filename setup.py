@@ -9,7 +9,7 @@ setup(name='map_downloader',
       license='MIT',
       packages=['map_downloader'],
       scripts=['bin/map_downloader'],
-      install_requires=['requests==2.19.1'],
+      install_requires=['requests==2.20.0'],
       classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
